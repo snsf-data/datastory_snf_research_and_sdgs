@@ -1,0 +1,1377 @@
+---
+params: 
+  title: ""
+  publication_date: ""
+  doi: ""
+  github: ""
+  lang: ""
+output:
+  html_document:
+    anchor_sections: false
+    theme: null
+    highlight: null
+    mathjax: null
+    css: ["style.css", "https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700&display=swap"]
+    self_contained: true
+# output: word_document
+# always_allow_html: yes
+title: "`r params$title`"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r general-setup, include=FALSE}
+## This file contains the FRENCH version of the data story
+
+# Set general chunk options
+knitr::opts_chunk$set(
+  echo = FALSE, fig.showtext = TRUE, fig.retina = 3,
+  fig.align = "center", warning = FALSE, message = FALSE
+)
+
+# Install snf.datastory package if not available, otherwise load it
+if (!require("snf.datastory")) {
+  if (!require("devtools")) {
+    install.packages("devtools")
+    library(devtools)
+  }
+  install_github("snsf-data/snf.datastory")
+  library(snf.datastory)
+}
+
+# Load packages
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(conflicted)
+library(jsonlite)
+library(here)
+library(glue)
+library(ggiraph)
+library(treemapify)
+
+# Conflict preferences
+conflict_prefer("filter", "dplyr")
+conflict_prefer("get_datastory_theme", "snf.datastory")
+conflict_prefer("get_datastory_scheme", "snf.datastory")
+
+# Increase showtext package font resolution
+showtext_opts(dpi = 320)
+
+# Set the locale for date formatting (Windows)
+Sys.setlocale("LC_TIME", "English")
+
+# Set the language for this rmd for translate function
+lang <- "en"
+
+# Create function to print number with local language-specific format
+print_num <- function(x) snf.datastory::print_num(x, lang = lang)
+
+# Knitr hook for local formatting of printed numbers
+knitr::knit_hooks$set(
+  inline <- function(x) {
+    if (!is.numeric(x)) {
+      x
+    } else {
+      print_num(x)
+    }
+  }
+)
+
+# Function that returns the desired language version of a string, given three
+# language strings are provided to the function 
+translate <- function(en_string = "NOT TRANSLATED",
+                      de_string = "NOT TRANSLATED",
+                      fr_string = "NOT TRANSLATED",
+                      lang = "en") {
+  string <- case_when(lang == "en" ~ en_string, 
+                      lang == "de" ~ de_string, 
+                      lang == "fr" ~ fr_string, 
+                      TRUE ~ "NO VALID LANGUAGE SPECIFIED")
+  string
+}
+
+```
+
+```{r print-header-infos, results='asis'}
+# Add publication date to header
+cat(format(as_datetime(params$publication_date), "%d.%m.%Y"))
+```
+
+```{r story-specific-setup, include=FALSE}
+# Set story-specific variables etc. here
+
+# load data comparing the different classifiers
+load(here("data/sdg_mentions_all.RData"))
+
+# load data with information regarding the mentions of sdgs (one line per grant)
+load(here("data/data_grants_w_sdg.RData"))
+
+# load data with information regarding the sdgs (one line per sdg, one grant
+# can appear multiple times)
+load(here("data/data_sdgs.RData"))
+
+# load data with information regarding the disciplines involved in projects with
+# reference to sdg 07 (one line per grant)
+load(here("data/data_sdg07_disciplines.RData"))
+
+# load data with information regarding the collaborations involved in projects 
+# reference to sdg 07 (one line per collaboration)
+load(here("data/data_sdg07_collaborations.RData"))
+
+# make vector with sdg-colors (working with 16 sdgs)
+sdg_16_colors <- c("#E5243B", "#DDA63A", "#4C9F38", "#C5192D", "#FF3A21",
+                            "#26BDE2", "#FCC30B", "#A21942", "#FD6925", "#DD1367",
+                            "#FD9D24", "#BF8B2E", "#3F7E44", "#0A97D9", "#56C02B",
+                            "#00689D")
+                            
+# make vector with sdg-colors (working with 17 sdgs)
+sdg_17_colors <- c("#E5243B", "#DDA63A", "#4C9F38", "#C5192D", "#FF3A21",
+                            "#26BDE2", "#FCC30B", "#A21942", "#FD6925", "#DD1367",
+                            "#FD9D24", "#BF8B2E", "#3F7E44", "#0A97D9", "#56C02B",
+                            "#00689D", "#19486A")
+                            
+
+# define the different plot types
+# plot_type1: barplot displaying SDGs faceting by another variable
+plot_type1 <- function(data, facet_var, result_var,
+                       y_max, upper_break, break_length,
+                       sdg_color_scheme){
+  
+  data %>% 
+    # in order to be able to refer to a column/variable in the data we assign 
+    # it using := 
+    rename(selected_facet := facet_var,
+           selected_result := result_var) %>%
+    ggplot(aes(x = selected_result, 
+               y = percentage, 
+               fill = selected_result)) + 
+    # choose the color
+    geom_col(width = 0.75) + 
+    geom_text(
+      # get the percentage plus the number of cases printed as a label
+      aes(
+        label =
+          if_else(
+            percentage > 0, 
+            paste0(print_num(round(percentage * 100, digits = 2)), "%"),
+            ""
+          ),
+        # print the label outside of the bar 
+        y =
+          if_else(
+            percentage > 0.2,
+            percentage - (max(percentage) / 25),
+            percentage + (max(percentage) / 25)
+          ),
+        hjust =
+          if_else(
+            percentage > 0.2,
+            1,
+            0
+          )
+      ),
+      color = "#4C4C4C",
+      size = 2.5, 
+      family = "Theinhardt"
+    ) + 
+    facet_wrap(vars(selected_facet)) +
+    coord_flip() +
+    # adjust the y-axis (percentage)
+    scale_y_continuous(limits = c(0, y_max), labels = percent_format(accuracy = 1), 
+                       breaks = seq(0, upper_break, break_length)) + 
+    labs(x = "", y = NULL) +
+    get_datastory_theme() +
+    # adjust the labels of the x-axis such that they don't overlap
+    theme(axis.text.x = element_text(hjust = 0.5)) +
+    # set the color scheme for the different sdgs
+    scale_fill_manual(values = rev(sdg_color_scheme)) +
+    # get rid of legend
+    theme(legend.position = "none",
+          panel.background = element_rect(fill = "#DAF1FC"),
+          plot.background = element_rect(fill = "#DAF1FC", color = NA),
+          panel.grid = element_blank())
+  
+}
+
+# plot_type2: barplot displaying proportion of grants per selected category 
+plot_type2 <- function(data, cat_var, facet_text,
+                       y_max, upper_break, break_length){
+  
+  data %>% 
+    # in order to be able to refer to a column/variable in the data we assign 
+    # it using := 
+    rename(selected_category := cat_var) %>%
+    mutate(facet_text = facet_text) %>%
+    ggplot(aes(x = selected_category, 
+               y = percentage)) + 
+    # choose the color
+    geom_col(fill = get_datastory_scheme()[1]) + 
+    geom_text(
+      # get the percentage plus the number of cases printed as a label
+      aes(label = if_else(percentage > 0, 
+                          paste0(round(percentage * 100, digits = 0), "%",
+                                 "\n", "n = ", print_num(n)), ""),
+          # print the label outside of the bar 
+          y = percentage + (max(percentage) / 25)), 
+      color = "#4C4C4C", 
+      size = 2.5, 
+      family = "Theinhardt", 
+      hjust = 0) + 
+    coord_flip() +
+    # adjust the y-axis (percentage)
+    scale_y_continuous(limits = c(0, y_max), labels = percent_format(accuracy = 1), 
+                       breaks = seq(0, upper_break, break_length)) + 
+    labs(x = "", 
+         y = " ") +
+    facet_wrap(~facet_text) +
+    get_datastory_theme()
+  
+}
+
+# plot_type3: barplot displaying proportion of amount awarded per selected category 
+plot_type3 <- function(data, cat_var, facet_text,
+                       y_max, upper_break, break_length){
+  data %>% 
+    # in order to be able to refer to a column/variable in the data we assign 
+    # it using := 
+    rename(selected_category := cat_var) %>%
+    mutate(facet_text = facet_text) %>%
+    ggplot(aes(x = selected_category, 
+               y = percentage)) + 
+    # choose the color
+    geom_col(fill = get_datastory_scheme()[1]) + 
+    geom_text(
+      # get the percentage plus the number of cases printed as a label
+      aes(label = if_else(percentage > 0, 
+                          paste0(round(percentage * 100, digits = 0), "%",
+                                 "\n", print_num(
+                                   round(TotalAmount / 1000000, digits = 0)),
+                                 " MCHF"), ""),
+          # print the label outside of the bar 
+          y = percentage + (max(percentage) / 25)), 
+      color = "#4C4C4C", 
+      size = 2.5, 
+      family = "Theinhardt", 
+      hjust = 0) + 
+    coord_flip() +
+    # adjust the y-axis (percentage)
+    scale_y_continuous(limits = c(0, y_max), labels = percent_format(accuracy = 1), 
+                       breaks = seq(0, upper_break, break_length)) + 
+    labs(x = "", 
+         y = "") +
+    facet_wrap(~facet_text) +
+    get_datastory_theme()
+  
+  
+}
+
+# plot_type4: lineplot displaying proportion of approved amounts or number of 
+# grants with relation to SDGs
+
+plot_type4 <- function(data, cat_var, facet_text,
+                       y_max, upper_break, break_length){
+  data %>%
+    # in order to be able to refer to a column/variable in the data we assign 
+    # it using := 
+    rename(selected_category := cat_var) %>%
+    mutate(facet_text = facet_text) %>%
+    ggplot(aes(x = CallDecisionYear, 
+               y = percentage, 
+               group = selected_category,
+               color = selected_category,
+               # Define tooltip text for ggiraph
+               tooltip = paste0(
+                 translate(
+                   "Research area: ",
+                   "Fachbereich: ",
+                   "Domaine de recherche : ",
+                   lang
+                 ),
+                 selected_category, "<br>",
+                 translate(
+                   "Percentage: ",
+                   "Anteil: ",
+                   "Part : ",
+                   lang
+                 ),
+                 paste0(round(percentage * 100, 0), "%"), "<br>",
+                 translate(
+                   "Year: ",
+                   "Jahr: ",
+                   "Année : ",
+                   lang
+                 ),
+                 CallDecisionYear, "<br>"),
+               data_id = rownames(data))) + 
+    geom_line(size = 0.5) +
+    geom_point_interactive(shape = 16, size = 2) +
+    # adjust the y-axis (percentage)
+    scale_y_continuous(limits = c(0, y_max), labels = percent_format(accuracy = 1), 
+                       breaks = seq(0, upper_break, break_length)) + 
+    labs(x = "", 
+         y = "") +
+    # set the color scheme for the different sdgs
+    scale_colour_manual(values = get_datastory_scheme()) +
+    facet_wrap(~facet_text) +
+    get_datastory_theme(gridline_axis = "y")
+  
+}
+
+# plot_type5: stacked barplot displaying proportion of SDGs grants 
+# per selected category 
+plot_type5 <- function(data, cat_var, label_y_axis, y_min,
+                       y_max, upper_break, break_length){
+  data %>% 
+    # in order to be able to refer to a column/variable in the data we assign 
+    # it using := 
+    rename(selected_category := cat_var) %>%
+    ggplot(aes(x = "", 
+               y = percentage,
+               fill = fct_rev(selected_category))) + 
+    geom_col(color = "white") + 
+    # get the percentage plus the number of cases printed as a label
+    geom_text(aes(label = paste0(round(percentage * 100, digits = 0), "%",
+                                 "\n", "n = ", n)),
+              # we want the label to be printed in the bar itself
+              position = position_stack(vjust = 0.5), 
+              color = "white",
+              size = 2.5,
+              family = "Theinhardt") +
+    coord_flip() + 
+    get_datastory_theme()  +
+    # define the values we want the colors to have
+    scale_fill_manual(values = rev(get_datastory_scheme(n_col = 2)),
+                      guide = guide_legend(reverse = TRUE)) +
+    labs(x = NULL, y = NULL,
+         caption = label_y_axis) +
+    # set up of the axis displaying the percentages
+    scale_y_continuous(limits = c(y_min, y_max), expand = c(0, 0), 
+                       breaks = seq(0, upper_break, break_length), 
+                       labels = percent_format(accuracy = 1)) +
+    # adjust the labels of the x-axis such that they don't overlap
+    theme(plot.caption.position = "panel",
+          plot.caption = element_text(hjust = 0)) 
+}
+
+# function to identify different discipline combinations
+identify_disc_combinations <- function(data, first_disc_var, second_disc_var){
+  
+  data %>%
+    rename(first_disc := first_disc_var,
+           second_disc := second_disc_var) %>% 
+    # get rid of cases where we have an NA
+    filter(!is.na(first_disc),
+           !is.na(second_disc)) %>%
+    # always have the lower discipline as the first discipline
+    mutate(first_disc_new = case_when(
+      first_disc > second_disc ~ second_disc,
+      first_disc < second_disc ~ first_disc),
+      second_disc_new = case_when(
+        first_disc > second_disc ~ first_disc,
+        first_disc < second_disc ~ second_disc),
+      # combine the two disciplines into one column with the lower
+      # discipline first
+      disc_comb = paste(first_disc_new, sep = ", ", second_disc_new)) %>%
+    # only keep the number plus the combined disciplines
+    select(Number, disc_comb)
+  
+}
+
+
+```
+
+
+<!-- Short lead (2-3 sentences) in bold -->
+
+**The SNSF performed an exploratory analysis to determine the extent to which the projects it funds are related to the UN Sustainable Development Goals. The analysis found evidence of links to the Goals in all research areas. A survey of researchers is set to provide further insights.**
+
+The aim of the United Nations' 17 Sustainable Development Goals (SDGs) is to promote human wellbeing in an equitable way such that no one gets left behind and the natural systems are protected. Research has an important role to play here. It generates new knowledge and, by so doing, lays the foundations for technological and social innovation. Thus, it contributes to the social and political discourse on concerted action and attitude change. 
+
+We used two labelling systems to conduct an exploratory analysis aimed at determining the SDG relevance of SNSF grants. Although the labelling systems still require further development (see "Method and limitations" box), the results give an initial insight into the relationship between SNSF-funded research and the SDGs.
+
+
+<div class="info-box">
+
+### Method and limitations
+
+<p>
+We tested various SDG labelling systems for our analysis: the Dimensions SDG classifier as well as the labelling systems available via the publicly accessible <a href="https://github.com/dwulff/text2sdg#readme" target="_blank">text2sdg</a> <a href="https://www.r-project.org/about.html" target="_blank">R package</a> (Aurora, Elsevier, OSDG, SDSN and SIRIS). The titles, abstracts and keywords of the grants were fed into each of these tools. We evaluated a random sample of the results generated by the various systems. This involved identifying the SDGs to which -- from our perspective -- the grants were linked and comparing our assessment with the results produced by the systems. Thus, we were able to determine which systems identified the "correct" SDGs and delivered the fewest false-positive results. A false-positive occurs when the labelling system identified a relationship with a particular SDG that does not match in reality. We concluded that the Dimensions and Elsevier systems produced the best results with the SNSF data. The approaches used by Dimensions and Elsevier are briefly explained below.
+</p>
+
+<p>
+<u>Dimensions</u><br/>
+The Dimensions classifier is based on machine learning and was developed by Digital Science. Using <a href="https://www.dimensions.ai/" target="_blank">Dimensions</a>, the world's largest linked research information dataset (publications, funding, research data, etc.), <a href="https://digitalscience.figshare.com/ndownloader/files/22574228" target="_blank">Digital Science built a model from the 17 SDGs</a>, using an approach that relied on creating and curating extensive and targeted search queries. This was used to generate 17 publication training sets from the Dimensions database (one for each SDG), and natural language processing was applied to create an SDG classification scheme. To improve the quality of the training sets, the results were repeatedly examined by ensuring the publications fit the description of the SDG definition. The Dimensions classifier also applies a proximity search to some of its search queries to ensure that sentences containing certain related words can also be found.^[Wastl J, Hook DW, Fane B, Draux H, Porter SJ. 2020. Contextualizing Sustainable Development Research. Using Dimensions to explore the global landscape of research on Sustainable Development Goals. Digital Science. Report. <a href="https://doi.org/10.6084/m9.figshare.12200081.v2" target="_blank">https://doi.org/10.6084/m9.figshare.12200081.v2</a>]
+</p>
+
+<p>
+<u>Elsevier</u><br/>
+Elsevier's data science team has also <a href="https://elsevier.digitalcommonsdata.com/datasets/87txkw7khs/1" target="_blank">developed a set of queries related to the SDGs</a>. These are based on <a href="https://www.scopus.com/" target="_blank">Scopus</a>, Elsevier's abstract and citation database for scientific literature. 
+Working with specialists, an initial Scopus search query was developed for each SDG. This produced a curated list of publications related to the SDGs. The process of refining the queries for each SDG is still ongoing. Elsevier uses customer feedback to increase the number of search terms used to define the individual SDGs. A machine learning model was added to the queries in a more recent version dating from 2021/2022. We used the original version from 2019 for the analyses in this data story. Elsevier does not include SDG 17 (Partnerships for the Goals) in its labelling system. Since we only consider cases where both labelling systems identify the same SDG (see the description of the approach in the next section), SDG 17 has also been excluded from our analysis.
+</p>
+
+<p>
+<b>Limitations</b><br/>
+Using automatic labelling systems to identify links to the SDGs has limitations. Firstly, not all links to the SDGs are identified correctly. Secondly, the tools occasionally identify links where there are none. Moreover, the tools are generally more sensitive to one or more of the SDGs and overestimate their prevalence. In addition, it is not yet possible to make a final assessment of the quality of the labelling systems, since very few sufficiently large validation data sets are currently available.^[Wulff DU, Meier DS, Mata R. 2023. Using novel data and ensemble models to improve automated labeling of Sustainable Development Goals. Preprint: <a href="https://arxiv.org/pdf/2301.11353.pdf" target="_blank">https://arxiv.org/pdf/2301.11353.pdf</a>]<br/><br/>
+In light of this, we decided to adopt a cautious approach, comparing the results obtained from Dimensions and Elsevier, and only deeming a link to an SDG valid if both tools had recognised it. This method was intended to produce a suitable lower bound that can be used to identify trends over time and reduce the problem of false-positive results. Although the methods and results are experimental, we believe that they are interesting nevertheless, since both tools set out to measure the same thing, are based on similar approaches and deliver comparable results.<br/><br/>
+In the meantime, the authors of the text2sdg R package have developed an "<a href="https://arxiv.org/pdf/2301.11353.pdf" target="_blank">ensemble model</a>" that brings together different labelling systems. This could potentially outperform our approach. We welcome this and will follow its development closely.
+</p>
+
+<div class="plot-box">
+<div class="plot-title">Comparison of the two labelling systems: percentage of grants approved from 2016 to 2021 that have a link to an SDG</div>
+
+```{r comparison-of-classifiers, out.width="100%", fig.height=6}
+# Visualize this data 
+plot_data <- sdg_mentions_all %>%
+  mutate(
+    sdg_result_fr =
+      fct_recode(
+        sdg_result_fr,
+        "01 Pas de pauvreté" = "01 Éradication de la pauvreté",
+        "02 Faim « zéro »" = "02 Lutte contre la faim",
+        "03 Bonne santé et bien-être" = "03 Accès à la santé",
+        "04 Éducation de qualité" = "04 Accès à une éducation de qualité",
+        "06 Eau propre et assainissement" = "06 Accès à l'eau salubre et à l'assainissement",
+        "07 Énergie propre et d'un coût abordable" = "07 Recours aux énergies renouvelables",
+        "08 Travail décent et croissance économique" = "08 Accès à des emplois décents",
+        "10 Inégalités réduites" = "10 Réduction des inégalités",
+        "13 Mesures relatives à la lutte contre les changements climatiques" = "13 Lutte contre le changement climatique",
+        "16 Paix, justice et institutions efficaces" = "16 Justice et paix"
+      ),
+    sdg_result_de =
+      fct_recode(
+        sdg_result_de,
+        "05 Geschlechter-Gleichheit" = "05 Geschlechter-Gleichstellung",
+      )
+  ) |>
+  filter(!str_starts(sdg_result, "17 ")) %>%
+  rename("in beiden gefunden" = freq_both, 
+         Dimensions = freq_dim, 
+         Elsevier = freq_elsevier) %>% 
+  # transform it into long format 
+  pivot_longer(
+    cols = c("in beiden gefunden", Dimensions, Elsevier),
+    names_to = "Classifier", 
+    values_to = "percentage") %>% 
+  mutate(
+    sdg_result = fct_relabel(sdg_result, ~ str_wrap(.x, width = 30)),
+    sdg_result_de = fct_relabel(sdg_result_de, ~ str_wrap(.x, width = 30)),
+    sdg_result_fr = fct_relabel(sdg_result_fr, ~ str_wrap(.x, width = 30)),
+    sdg_result = fct_rev(sdg_result),
+    sdg_result_de = fct_rev(sdg_result_de),
+    sdg_result_fr = fct_rev(sdg_result_fr),
+    Classifier =
+      recode(
+        Classifier,
+        "in beiden gefunden" = translate(
+          "Found in both",
+          "in beiden gefunden",
+          "Recoupement\nDimensions/Elsevier",
+          lang
+        )
+      )
+  ) 
+
+# make the plot using the plot_type1 function
+plot_type1(data = plot_data,
+           facet_var = "Classifier",
+           result_var = paste0("sdg_result", translate("", "_de", "_fr", lang)),
+           y_max = 0.22, upper_break = 0.2, break_length = 0.05,
+           sdg_color_scheme = sdg_16_colors)
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+
+### All research areas are conducting research related to the Sustainable Development Goals
+
+The labelling system identified a link to one or more SDGs in 1,489 out of a total 12,431 grants (12%) approved since 2016 (see figure below). These grants received funding totalling 709 million Swiss francs or 13% of the funding awarded. A link to more than one SDG was identified in very few cases. Links to two SDGs were identified in 70 grants (0.6%) and just two grants were found to have a link to three SDGs.
+
+```{r analyse-how-many-grants-are-related-to-SDGs-overall}
+
+# How many grants have reference to SDGs
+plot_data_1 <- data_grants_w_sdg %>%
+  mutate(
+    is_sdg_fr =
+      recode(
+        is_sdg_fr,
+        `Pas de lien avec SDG` = "Aucun lien avec les ODD",
+        `Lien avec SDG` = "Lien avec les ODD"
+      ),
+    is_sdg =
+      recode(
+        is_sdg,
+        `No SDG reference` = "No link to SDGs",
+        `SDG reference` = "Link to SDGs"
+      ),
+  ) %>%
+  # count how many times we identified SDGs 
+  count(
+    .data[[
+      paste0("is_sdg", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  # calculate percentage to get an idea of the relations
+  mutate(percentage = round((n / sum(n)), digits = 4))
+
+# How much money went to projects related to SDGs
+plot_data_2 <- data_grants_w_sdg %>% 
+  mutate(
+    is_sdg_fr =
+      recode(
+        is_sdg_fr,
+        `Pas de lien avec SDG` = "Aucun lien avec les ODD",
+        `Lien avec SDG` = "Lien avec les ODD"
+      ),
+    is_sdg =
+      recode(
+        is_sdg,
+        `No SDG reference` = "No link to SDGs",
+        `SDG reference` = "Link to SDGs"
+      ),
+  ) %>%
+  # Group by is_sdg
+  group_by(
+    .data[[
+      paste0("is_sdg", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  # summarise the awarded money per is sdg or not
+  summarise(TotalAmount = sum(AmountGranted)) %>% 
+  mutate(percentage = 
+           round(TotalAmount / sum(TotalAmount), digits = 3))
+```
+
+
+<div class="hide-mobile hide-tablet widemedia">
+<div class="plot-box">
+<div class="plot-title">Approved grants 2016–2021 where a link to one or more SDGs was identified (percentage of grants and percentage of approved funding)</div>
+
+```{r plot-2-desk, out.width="100%", fig.height=2}
+
+# And make the plot 1
+plot_type2(data = plot_data_1,
+           cat_var = paste0("is_sdg", translate("", "_de", "_fr", lang)),
+           facet_text =
+             translate(
+               "Percentage of grants",
+               "Anteil der Projekte",
+               "Part des projets approuvés",
+               lang
+             ),
+           y_max = 1.3,
+           upper_break = 1,
+           break_length = 0.2) 
+
+# And make the plot 2
+plot_type3(data = plot_data_2,
+           cat_var = paste0("is_sdg", translate("", "_de", "_fr", lang)),
+           facet_text =
+             translate(
+               "Percentage of approved funding",
+               "Anteil des bewilligten Betrags",
+               "Part du montant accordé",
+               lang
+             ),
+           y_max = 1.3,
+           upper_break = 1,
+           break_length = 0.2)
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+<div class="hide-desktop">
+<div class="plot-box">
+<div class="plot-title">Approved grants 2016–2021 where a link to one or more SDGs was identified (percentage of grants and percentage of approved funding)</div>
+
+```{r plot-2-phone, out.width="100%", fig.height=2}
+
+# And make the plot 1
+plot_type2(data = plot_data_1,
+           cat_var = paste0("is_sdg", translate("", "_de", "_fr", lang)),
+           facet_text =
+             translate(
+               "Percentage of grants",
+               "Anteil der Projekte",
+               "Part des projets approuvés",
+               lang
+             ),
+           y_max = 1.3,
+           upper_break = 1,
+           break_length = 0.2) 
+
+# And make the plot 2
+plot_type3(data = plot_data_2,
+           cat_var = paste0("is_sdg", translate("", "_de", "_fr", lang)),
+           facet_text =
+             translate(
+               "Percentage of approved funding",
+               "Anteil des bewilligten Betrags",
+               "Part du montant accordé",
+               lang
+             ),
+           y_max = 1.3,
+           upper_break = 1,
+           break_length = 0.2)
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+Overall, there has been a slight upwards trend since 2016. The labelling system indicates an increasing number of grants with a link to the SDGs and thus also a greater investment of financial resources towards SDG research. There are no major differences between research areas (social sciences and humanities: SSH, mathematics, natural and engineering sciences: MINT and life sciences: LS).
+
+```{r analyse-how-many-grants-are-related-to-SDGs-over-time}
+
+# how does it evolve over time - do we observe more mentions in recent years
+# looking at number of grants
+plot_data <- data_grants_w_sdg %>%
+  group_by(
+    CallDecisionYear,
+    .data[[
+      paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  # count how many times we have a mention of at least one SDG
+  count(is_sdg) %>% 
+  # calculate percentage to get an idea of the relations
+  mutate(percentage = (n / sum(n))) %>% 
+  filter(
+    .data[[
+      paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+    ]]
+    !=
+      translate(
+        "Interdisciplinary",
+        "Interdisziplinär",
+        "Interdisciplinaire",
+        lang
+      )
+  ) %>% 
+  # only keep the rows indicating how many grants had a relation to SDGs 
+  filter(is_sdg == "SDG reference")
+
+# make the plot
+p_n_sdg_projects_disc <-
+  plot_type4(
+    data = plot_data,
+    cat_var = paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang)), 
+    facet_text =
+      translate(
+        "Percentage of grants",
+        "Anteil der Projekte",
+        "Part des projets approuvés",
+        lang
+      ),
+    y_max = 0.2,
+    upper_break = 0.2,
+    break_length = 0.05
+  )
+
+
+# Create ggiraph object
+girafe_n_sdg_projects_disc <- girafe(
+  ggobj = p_n_sdg_projects_disc,
+  height_svg = 3.5,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_hover(css = "fill:#F08262;stroke:#F08262;stroke-width:2"),
+    opts_tooltip(
+      css = get_ggiraph_tooltip_css(),
+      opacity = 0.8,
+      delay_mouseover = 0,
+      delay_mouseout = 0
+    )
+  )
+)
+
+
+# how does it evolve over time - do we observe more mentions in recent years
+# looking at approved amounts
+plot_data <- data_grants_w_sdg %>% 
+  group_by(
+    is_sdg,
+    CallDecisionYear,
+    .data[[
+      paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  # summarise the awarded money per is sdg or not
+  summarise(TotalAmount = sum(AmountGranted)) %>% 
+  group_by(
+    CallDecisionYear,
+    .data[[
+      paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  mutate(percentage = 
+           round(TotalAmount / sum(TotalAmount), digits = 3)) %>% 
+  filter(
+    .data[[
+      paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+    ]] !=
+      translate(
+        "Interdisciplinary",
+        "Interdisziplinär",
+        "Interdisciplinaire",
+        lang
+      )
+  ) %>% 
+  # only keep the rows indicating how many grants had a relation to SDGs 
+  filter(is_sdg == "SDG reference") 
+
+# make the plot
+p_amount_sdg_projects_disc <-
+  plot_type4(
+    data = plot_data,
+    cat_var = paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang)), 
+    facet_text =
+      translate(
+        "Percentage of approved funding",
+        "Anteil des bewilligten Betrags",
+        "Part du montant accordé",
+        lang
+      ),
+    y_max = 0.2,
+    upper_break = 0.2,
+    break_length = 0.05
+  )
+
+# Create ggiraph object
+girafe_amount_sdg_projects_disc <- girafe(
+  ggobj = p_amount_sdg_projects_disc,
+  height_svg = 3.5,
+  options = list(
+    opts_toolbar(saveaspng = FALSE),
+    opts_hover(css = "fill:#F08262;stroke:#F08262;stroke-width:2"),
+    opts_tooltip(
+      css = get_ggiraph_tooltip_css(),
+      opacity = 0.8,
+      delay_mouseover = 0,
+      delay_mouseout = 0
+    )
+  )
+)
+
+```
+
+<div class="hide-mobile hide-tablet widemedia">
+<div class="plot-box">
+<div class="plot-title">Trends in percentage of grants where a link to one or more SDGs was identified (percentage of grants and percentage of approved funding)</div>
+
+```{r plot-3-desk, out.width="100%", fig.height=3}
+
+girafe_n_sdg_projects_disc
+
+girafe_amount_sdg_projects_disc
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+<div class="hide-desktop">
+<div class="plot-box">
+<div class="plot-title">Trends in percentage of grants where a link to one or more SDGs was identified (percentage of grants and percentage of approved funding)</div>
+
+```{r plot-3-phone, out.width="100%", fig.height=3}
+
+girafe_n_sdg_projects_disc
+
+girafe_amount_sdg_projects_disc
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+### Most research on climate action and health
+
+Using the labelling system, we were able to identify the SDGs addressed by SNSF grants. Links were most frequently identified for the following six SDGs:
+
+-	SDG 13: Climate Action (3.1% of all grants analysed)
+-	SDG 3: Good Health and Well-Being (3.1%)
+-	SDG 7: Affordable and Clean Energy (1.9%)
+-	SDG 16: Peace, Justice and Strong Institutions (1.7%)
+-	SDG 10: Reduced Inequalities (0.5%)
+-	SDG 11: Sustainable Cities and Communities (0.4%)
+
+```{r analyse-distribution-across-sdgs-overall}
+
+# Look at what sdgs are most often found in the approved grants only
+sdg_grants_data <- sdg_mentions_all %>% 
+  filter(sdg_result != "17 Partnerships for the Goals") %>% 
+  select(sdg_result, freq_both, n_both) %>% 
+  mutate(
+    my_color = sdg_16_colors,
+    sdg_result_short = str_sub(sdg_result, 1, 2),
+    sdg_result_short =
+      str_glue("{translate('SDG', 'SDG', 'ODD', lang)} {sdg_result_short}"),
+    sdg_result = fct_reorder(sdg_result, n_both),
+    sdg_n = glue::glue("{sdg_result_short}\n n = {n_both}")
+  ) 
+```
+
+<div class="hide-mobile hide-tablet widemedia">
+<div class="plot-box">
+<div class="plot-title">Percentage of grants approved between 2016 and 2021 by SDG</div>
+
+```{r plot-4-desk, out.width="100%", fig.height=3.5}
+# make the plot
+sdg_grants_data %>%
+  ggplot(aes(area = n_both, fill = my_color, label = sdg_n)) + 
+  geom_treemap(start = "bottomleft") +
+  geom_treemap_text(fontface = "italic", colour = "white",
+                    place = "center", grow = FALSE,
+                    family = "Theinhardt",
+                    start = "bottomleft")+
+  scale_fill_identity(
+    guide = "legend",
+    breaks = plot_data$my_color,
+    label = plot_data$sdg_result) +
+  get_datastory_theme() +
+  # get legend on two rows
+  guides(fill = guide_legend(nrow = 6, byrow = TRUE))
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+<div class="hide-desktop">
+<div class="plot-box">
+<div class="plot-title">Percentage of grants approved between 2016 and 2021 by SDG</div>
+
+```{r plot-4-phone, out.width="100%", fig.height=3.5}
+# make the plot
+sdg_grants_data %>%
+  ggplot(aes(area = n_both, fill = my_color, label = sdg_n)) + 
+  geom_treemap(start = "bottomleft") +
+  geom_treemap_text(fontface = "italic", colour = "white",
+                    place = "center", grow = FALSE,
+                    family = "Theinhardt",
+                    start = "bottomleft")+
+  scale_fill_identity(
+    guide = "legend",
+    breaks = plot_data$my_color,
+    label = plot_data$sdg_result) +
+  get_datastory_theme() +
+  # get legend on two rows
+  guides(fill = guide_legend(nrow = 6, byrow = TRUE))
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+Which research areas address those SDGs? There appears to be one "dominant" research area for each of the top three SDGs; however, the two other areas also contribute to research into the issue in question. SDG 16 (Peace, Justice and Strong Institutions) and SDG 10 (Reduced Inequalities) appear to be more or less exclusively the domain of the social sciences and humanities (SSH). In contrast, SDG 11 (Sustainable Cities and Communities) was shared in similar proportions by SSH and MINT (mathematics, natural and engineering sciences), with the life sciences (LS) also playing a small role.
+
+```{r analyse-contribution-research-areas-top-SDGs}
+# Create vector containing the top-6 sdgs
+top_6_sdg <- sdg_mentions_all %>%
+  slice_max(n_both, n = 6) %>% 
+  mutate(sdg_result_short = str_sub(sdg_result, 1, 2)) %>%  
+  mutate(
+    sdg_result_short =
+      paste0(translate('SDG ', 'SDG ', 'ODD ', lang), sdg_result_short)
+  ) %>% 
+  pull(sdg_result_short)
+
+plot_data <- data_sdgs %>% 
+  mutate(
+    sdg_result = paste0(translate('SDG ', 'SDG ', 'ODD ', lang), sdg_result)
+  ) %>% 
+  filter(sdg_result %in% top_6_sdg,
+         MainDisciplineLevel1 != "Interdisciplinary") %>% 
+  group_by(
+    sdg_result,
+    .data[[
+      paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  count(sdg_result) %>% 
+  group_by(sdg_result) %>% 
+  # calculate percentage to get an idea of the relations
+  mutate(percentage = round((n / sum(n)), digits = 4)) %>% 
+  ungroup() %>% 
+  mutate(sdg_result = as_factor(sdg_result),
+         sdg_result = fct_rev(fct_relevel(sdg_result, top_6_sdg)))
+```
+
+<div class="hide-mobile hide-tablet widemedia">
+<div class="plot-box">
+<div class="plot-title">Contribution of the three research areas to the top six SDGs</div>
+
+```{r plot-5-desk, out.width="100%", fig.height=3.5}
+plot_data %>% 
+  ggplot(
+    aes(x = sdg_result, 
+        y = percentage,
+        fill =
+          fct_rev(
+            .data[[
+              paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+            ]]
+          )
+    )) + 
+  geom_col(color = "white") +
+  # get the percentage plus the number of cases printed as a label
+  geom_text(aes(label = if_else(percentage > 0.05, 
+                                paste0(round(percentage * 100, digits = 0), "%",
+                                       "\n", "n = ", n),
+                                # if percentage is very small do not print label
+                                "")),
+            # we want the label to be printed in the bar itself
+            position = position_stack(vjust = 0.5), 
+            color = "white",
+            size = 3,
+            family = "Theinhardt") +
+  coord_flip() + 
+  # put legend to the bottom
+  get_datastory_theme() +
+  # define the values we want the colors to have
+  scale_fill_manual(values = rev(get_datastory_scheme(n_col = 3)),
+                    guide = guide_legend(reverse = TRUE)) +
+  # set up of the axis displaying the percentages
+  scale_y_continuous(limits = c(0, 1.05), expand = c(0, 0), 
+                     breaks = seq(0, 1, 0.25), 
+                     labels = percent_format(accuracy = 1)) +
+  labs(x = NULL, y = NULL)  +
+  theme(plot.caption.position = "panel",
+        plot.caption = element_text(hjust = 0))
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+<div class="hide-desktop">
+<div class="plot-box">
+<div class="plot-title">Contribution of the three research areas to the top six SDGs</div>
+
+```{r plot-5-phone, out.width="100%", fig.height=3.5}
+plot_data %>% 
+  ggplot(
+    aes(x = sdg_result, 
+        y = percentage,
+        fill =
+          fct_rev(
+            .data[[
+              paste0("MainDisciplineLevel1", translate("", "_de", "_fr", lang))
+            ]]
+          )
+    )) + 
+  geom_col(color = "white") +
+  # get the percentage plus the number of cases printed as a label
+  geom_text(aes(label = if_else(percentage > 0.05, 
+                                paste0(round(percentage * 100, digits = 0), "%",
+                                       "\n", "n = ", n),
+                                # if percentage is very small do not print label
+                                "")),
+            # we want the label to be printed in the bar itself
+            position = position_stack(vjust = 0.5), 
+            color = "white",
+            size = 3,
+            family = "Theinhardt") +
+  coord_flip() + 
+  # put legend to the bottom
+  get_datastory_theme() +
+  # define the values we want the colors to have
+  scale_fill_manual(values = rev(get_datastory_scheme(n_col = 3)),
+                    guide = guide_legend(reverse = TRUE)) +
+  # set up of the axis displaying the percentages
+  scale_y_continuous(limits = c(0, 1.05), expand = c(0, 0), 
+                     breaks = seq(0, 1, 0.25), 
+                     labels = percent_format(accuracy = 1)) +
+  labs(x = NULL, y = NULL)  +
+  theme(plot.caption.position = "panel",
+        plot.caption = element_text(hjust = 0))
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021.
+</div>
+</div>
+</div>
+
+### Research into affordable and clean energy: several contributing disciplines
+
+Below we take a closer look at SDG 7 (Affordable and Clean Energy) -- a very topical issue. According to the labelling system, 240 (1.9%) of all the grants analysed have a link to this SDG. The associated financial resources amount to 108 million Swiss francs.
+
+Just under half (44%) of these grants involve several participating disciplines. This is also the case for the other SDGs: almost half of the grants (47%) with an identified link to an SDG involved several participating disciplines. Grants with several disciplines only account for 41% of all the grants funded by the SNSF, and so this finding reinforces the <a href="https://www.nature.com/articles/525315a" target="_blank">hypothesis</a> that collaboration across disciplinary boundaries is particularly important for addressing global challenges. Complex issues require collaboration, consensus-building, validation, cross-fertilisation of ideas and effective communication beyond scientific disciplines.
+
+```{r analyse-SDG07-according-to-number-of-disciplines, out.width="100%", fig.height=1.5}
+# Calculate what proportion of all grants with sdg reference had more than
+# one discipline
+plot_data <- data_sdgs %>% 
+  filter(sdg_result == "07") %>%
+  mutate(
+    is_interdisciplinary_cat_de =
+      fct_relevel(is_interdisciplinary_cat_de, "Eine Disziplin"),
+    is_interdisciplinary_cat =
+      fct_relevel(is_interdisciplinary_cat, "One discipline"),
+    is_interdisciplinary_cat_fr =
+      fct_relevel(is_interdisciplinary_cat_fr, "Une discipline")
+  ) %>%
+  distinct(Number, .keep_all = TRUE) %>% 
+  group_by(
+    .data[[
+      paste0("is_interdisciplinary_cat", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(percentage = n / sum(n)) 
+```
+
+<div class="hide-mobile hide-tablet widemedia">
+<div class="plot-box">
+<div class="plot-title">Number of disciplines involved in grants with an identified link to SDG 7 (Affordable and Clean Energy)</div>
+
+```{r plot-6-desk, out.width="100%", fig.height=1.5}
+# Plot this data
+plot_type5(data = plot_data,
+           cat_var = paste0("is_interdisciplinary_cat", translate("", "_de", "_fr", lang)),
+           label_y_axis = " ",
+           y_min = 0, 
+           y_max = 1.1,
+           upper_break = 1.1,
+           break_length = 0.25)
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021 with a link to SDG 7.
+</div>
+</div>
+</div>
+
+<div class="hide-desktop">
+<div class="plot-box">
+<div class="plot-title">Number of disciplines involved in grants with an identified link to SDG 7 (Affordable and Clean Energy)</div>
+
+```{r plot-6-phone, out.width="100%", fig.height=1.5}
+# Plot this data
+plot_type5(data = plot_data,
+           cat_var = paste0("is_interdisciplinary_cat", translate("", "_de", "_fr", lang)),
+           label_y_axis = " ",
+           y_min = 0, 
+           y_max = 1.1,
+           upper_break = 1.1,
+           break_length = 0.25)
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021 with a link to SDG 7.
+</div>
+</div>
+</div>
+
+```{r identify-which-disciplines-come-together-most-often}
+
+# using the function to identif discpline combinations, we use this to identify
+# these combinations on all possible pairings of two disciplines for a given
+# grant -> this step has to be repeated several times 
+disc_1_2 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc1",
+  second_disc_var = "disc2"
+)
+
+disc_1_3 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc1",
+  second_disc_var = "disc3"
+)
+
+disc_1_4 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc1",
+  second_disc_var = "disc4"
+)
+
+disc_1_5 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc1",
+  second_disc_var = "disc5"
+)
+
+disc_1_6 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc1",
+  second_disc_var = "disc6"
+)
+
+disc_2_3 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc2",
+  second_disc_var = "disc3"
+)
+
+disc_2_4 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc2",
+  second_disc_var = "disc4"
+)
+
+disc_2_5 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc2",
+  second_disc_var = "disc5"
+)
+
+disc_2_6 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc2",
+  second_disc_var = "disc6"
+)
+
+disc_3_4 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc3",
+  second_disc_var = "disc4"
+)
+
+disc_3_5 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc3",
+  second_disc_var = "disc5"
+)
+
+disc_3_6 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc3",
+  second_disc_var = "disc6"
+)
+
+disc_4_5 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc4",
+  second_disc_var = "disc5"
+)
+
+disc_4_6 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc4",
+  second_disc_var = "disc6"
+)
+
+disc_5_6 <- identify_disc_combinations(
+  data = data_sdg07_disciplines,
+  first_disc_var = "disc5",
+  second_disc_var = "disc6"
+)
+
+# now combine all of these datasets together by putting them underneath each
+# other
+disc_comb_sdg07 <- bind_rows(disc_1_2, disc_1_3, disc_1_4, disc_1_5, disc_1_6,
+                             disc_2_3, disc_2_4, disc_2_5, disc_2_6,
+                             disc_3_4, disc_3_5, disc_3_6,
+                             disc_4_5, disc_4_6,
+                             disc_5_6)
+
+# get number of interdisciplinary grants that are related to sdg 07 overall
+n_interdis_grants_sdg7 <- data_sdg07_disciplines %>% 
+  count() %>% 
+  pull()
+
+# make table where we see 
+n_disc_comb_sdg07 <- disc_comb_sdg07 %>% 
+  ungroup() %>% 
+  count(disc_comb) %>% 
+  arrange(desc(n)) %>% 
+  mutate(percentage = round((n / n_interdis_grants_sdg7) *100 , digits = 0))
+
+```
+
+
+The most frequent combinations of disciplines in grants with an identified link to SDG 7 were:
+
+- Chemistry and engineering science (`r n_disc_comb_sdg07 %>% filter(disc_comb == "20300, 20500") %>% pull(n)` grants, `r n_disc_comb_sdg07 %>% filter(disc_comb == "20300, 20500") %>% pull(percentage)`% of grants with several disciplines) ;
+- Physics and engineering science (`r n_disc_comb_sdg07 %>% filter(disc_comb == "20400, 20500") %>% pull(n)` grants, `r n_disc_comb_sdg07 %>% filter(disc_comb == "20400, 20500") %>% pull(percentage)`%) ;
+- Chemistry and physics (`r n_disc_comb_sdg07 %>% filter(disc_comb == "20300, 20400") %>% pull(n)` grants, `r n_disc_comb_sdg07 %>% filter(disc_comb == "20300, 20400") %>% pull(percentage)`%).
+
+Frequently, two or more applicants are working together in these grants. Thus, 23% of grants with a link to SDG 7 are collaborative. This same percentage applies across all grants with a link to an SDG (23%). Across all the grants studied, the share of collaborative grants is only 19%.
+
+```{r analyse-SDG07-according-to-degree-of-collaboration, out.width="100%", fig.height=1.5}
+# Calculate what proportion of all grants with sdg reference had more than
+# one discipline
+plot_data <- data_sdgs %>% 
+  filter(sdg_result == "07") %>% 
+  distinct(Number, .keep_all = TRUE) %>%
+  mutate(
+    is_collaborative_cat_de =
+      fct_relevel(
+        recode(
+          is_collaborative_cat_de,
+          Kollaborativ = "Mehr als eine gesuchstellende Person",
+          `Nicht kollaborativ` = "Eine gesuchstellende Person"
+        ),
+        "Eine gesuchstellende Person"
+      ),
+    is_collaborative_cat =
+      fct_relevel(
+        recode(
+          is_collaborative_cat,
+          Collaborative = "More than one applicant",
+          `Non-collaborative` = "One applicant"
+        ),
+        "One applicant"
+      ),
+    is_collaborative_cat_fr =
+      fct_relevel(
+        recode(
+          is_collaborative_cat_fr,
+          Collaboratif = "Plusieurs requérant·es",
+          `Non collaboratif` = "Un·e requérant·e"
+        ),
+        "Un·e requérant·e"
+      )
+  ) %>%
+  group_by(
+    .data[[
+      paste0("is_collaborative_cat", translate("", "_de", "_fr", lang))
+    ]]
+  ) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(percentage = n / sum(n)) 
+```
+
+<div class="hide-mobile hide-tablet widemedia">
+<div class="plot-box">
+<div class="plot-title">Level of collaboration in grants with an identified link to SDG 7 (Affordable and Clean Energy)</div>
+
+```{r plot-7-desk, out.width="100%", fig.height=1.5}
+# Plot this data
+plot_type5(data = plot_data,
+           cat_var = paste0("is_collaborative_cat", translate("", "_de", "_fr", lang)),
+           label_y_axis = " ",
+           y_min = 0, 
+           y_max = 1.1,
+           upper_break = 1.1,
+           break_length = 0.25)
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021 with a link to SDG 7.
+</div>
+</div>
+</div>
+
+<div class="hide-desktop">
+<div class="plot-box">
+<div class="plot-title">Level of collaboration in grants with an identified link to SDG 7 (Affordable and Clean Energy)</div>
+
+```{r plot-7-phone, out.width="100%", fig.height=1.5}
+# Plot this data
+plot_type5(data = plot_data,
+           cat_var = paste0("is_collaborative_cat", translate("", "_de", "_fr", lang)),
+           label_y_axis = " ",
+           y_min = 0, 
+           y_max = 1.1,
+           upper_break = 1.1,
+           break_length = 0.25)
+
+```
+
+<div class="caption">
+Data: Approved grants 2016–2021 with a link to SDG 7.
+</div>
+</div>
+</div>
+
+```{r analyse-the-type-of-collaborations}
+
+# get the number of collaborative projects (in SDG 07)
+n_collab_projects_sdg07 <- data_sdgs %>% 
+  filter(sdg_result == "07",
+         is_collaborative == 1) %>%
+  count() %>% 
+  pull()
+
+# get the number of applicants involved in collaborative projects (with 
+# reference to SDG 07)
+n_applicants_collab_sdg07 <- data_sdgs %>% 
+  filter(sdg_result == "07",
+         is_collaborative == 1) %>%
+  summarise(total_applicants = sum(n_applicants)) %>% 
+  pull()
+
+# identify the cases where collaboration was international
+international_collabrations_sdg07 <- data_sdg07_collaborations %>% 
+  filter(Institution2 == "International") %>%
+  # only count this type of collaboration once per project, as we are now 
+  # interested in knowing how many projects of the 55 have this form of 
+  # collaboration
+  distinct(Number, .keep_all = TRUE) %>% 
+  count() %>% 
+  pull()
+```
+
+A total of `r n_applicants_collab_sdg07` applicants were involved in the `r n_collab_projects_sdg07` collaborative grants with a link to SDG 7. The most common form of collaboration was between Swiss and foreign institutions. This type of international collaboration was found in `r international_collabrations_sdg07` grants. 
+
+### 2023: Launch of a survey on SDGs
+
+As mentioned above, the labelling systems used are still under development, and we are thus unable to determine with complete certainty how many grants are actually linked to the SDGs. To obtain a better and more complete overview, the SNSF will launch a survey in 2023 to ask corresponding applicants about any specific contributions their grants make to the SDGs. By doing so, we hope to obtain a systematic overview and identify gaps in current knowledge about sustainable development. We can then launch suitable initiatives to stimulate research projects that will fill these gaps and contribute to the achievement of the SDGs.
+
+<div class="info-box">
+
+### Data
+
+<p>This analysis is based on the titles, abstracts, and keywords from grant proposals funded between 2016 and 2021. Scientific communication projects -- Scientific Exchanges, Agora, open-access fees and publication grants -- have been excluded. The National Centres of Competence in Research (NCCRs) have also been excluded because they have a different structure. A total of 12,431 grants were analysed. </p>
+
+<p><b>Grants involving several disciplines</b> were identified using the information supplied by the applicants (primary and secondary disciplines, see <a href="https://www.snf.ch/SiteCollectionDocuments/allg_disziplinenliste.pdf" target="_blank">disciplines list</a>). The SNSF discipline list comprises three levels. At the overarching level are the three research areas -- social sciences and humanities (SSH), mathematics, natural and engineering sciences (MINT) and the life sciences (LS). The middle level refines these research areas, and the third level disciplines have an even finer granularity. If a grant lists at least two different middle level disciplines, we define it as a grant involving several disciplines.</p>
+
+<p>A <b>collaborative grant</b>, is one in which at least two applicants participate. This comprises one corresponding applicant and at least one other applicant.</p>
+
+</div>
+
+<!-- <div class="hide-desktop"> -->
+<strong>Links to more information</strong>
+<p>
+<a href="https://www.snf.ch/en/3DEoAgSx2yMXZaAX/topic/sustainable-development" target="_blank" class="button-blue">Sustainable development</a>
+</p>
+<!-- </div> -->
+
+Data, text and code of this data story are <a href="`r params$github`" target="_blank">available on Github</a> and <a href="`r params$doi`" target="_blank">archived on Zenodo</a>.<br>DOI: `r str_remove(params$doi, "https://doi.org/")`
+
+```{r prevent-internal-snsf-packages, include=FALSE}
+# Internal SNSF packages must not be used in data stories, as their
+# pre-processing functions are internal and the corporate design differs from
+# the data portal.
+if (any(c("snfverse", "snf.preprocessing", "snf.plot") %in% 
+        loadedNamespaces())) {
+  stop(glue(
+    "You must not use internal SNSF packages in data stories.",
+    " Please resort to snf.datastory."
+  ))
+}
+```

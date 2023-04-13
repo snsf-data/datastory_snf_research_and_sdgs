@@ -1,0 +1,153 @@
+Number,Institution1,Institution2,IntitutionType1,IntitutionType2,Role,same_inst_collab
+197208,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+197208,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+177474,ETHZ,International,ETH Domain,NA,Co-applicants,0
+177474,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+177474,ETHZ,International,ETH Domain,NA,Co-applicants,0
+177474,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+177474,ETHZ,International,ETH Domain,NA,Co-applicants,0
+177474,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+177474,ETHZ,International,ETH Domain,NA,Co-applicants,0
+177474,ETHZ,International,ETH Domain,NA,Co-applicants,0
+177474,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+180170,EPFL,International,ETH Domain,NA,Co-applicants,0
+180170,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+180170,EPFL,International,ETH Domain,NA,Co-applicants,0
+180170,EPFL,International,ETH Domain,NA,Co-applicants,0
+180170,EPFL,International,ETH Domain,NA,Co-applicants,0
+192218,PSI,PSI,ETH Domain,ETH Domain,Applicant,1
+192218,PSI,ETHZ,ETH Domain,ETH Domain,Co-applicants,0
+188637,GE,GE,Cantonal university,Cantonal university,Applicant,1
+188637,GE,GE,Cantonal university,Cantonal university,Co-applicants,1
+182972,EPFL,International,ETH Domain,NA,Co-applicants,0
+182972,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+182972,EPFL,International,ETH Domain,NA,Co-applicants,0
+182967,SUPSI,SUPSI,UAS,University of applied sciences,Applicant,1
+182967,SUPSI,EPFL,UAS,ETH Domain,Co-applicants,0
+172929,EPFL,International,ETH Domain,NA,Co-applicants,0
+172929,EPFL,International,ETH Domain,NA,Co-applicants,0
+172929,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+192191,EMPA,International,ETH Domain,NA,Co-applicants,0
+192191,EMPA,EMPA,ETH Domain,ETH Domain,Applicant,1
+203670,WSL,WSL,ETH Domain,ETH Domain,Applicant,1
+203670,WSL,International,ETH Domain,NA,Co-applicants,0
+180258,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+180258,EPFL,EPFL,ETH Domain,ETH Domain,Co-applicants,1
+180258,EPFL,International,ETH Domain,NA,Co-applicants,0
+176563,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+176563,EPFL,CSEM,ETH Domain,Other research institutes,Co-applicants,0
+176563,EPFL,CSEM,ETH Domain,Other research institutes,Co-applicants,0
+189444,EPFL,International,ETH Domain,NA,Co-applicants,0
+189444,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+189444,EPFL,International,ETH Domain,NA,Co-applicants,0
+186999,ZH,FP,Cantonal university,Other,Co-applicants,0
+186999,ZH,ZH,Cantonal university,Cantonal university,Applicant,1
+202225,EPFL,International,ETH Domain,NA,Co-applicants,0
+202225,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+202225,EPFL,ZH,ETH Domain,Cantonal university,Co-applicants,0
+203645,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+203645,ETHZ,FHO,ETH Domain,University of applied sciences,Co-applicants,0
+186991,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+186991,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+172703,GE,GE,Cantonal university,Cantonal university,Applicant,1
+172703,GE,BS,Cantonal university,Cantonal university,Co-applicants,0
+172703,GE,HSLU,Cantonal university,University of applied sciences,Co-applicants,0
+171000,EPFL,EPFL,ETH Domain,ETH Domain,Co-applicants,1
+171000,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+171000,EPFL,EPFL,ETH Domain,ETH Domain,Co-applicants,1
+171000,EPFL,CSEM,ETH Domain,Other research institutes,Co-applicants,0
+177255,ZH,EPFL,Cantonal university,ETH Domain,Co-applicants,0
+177255,ZH,LA,Cantonal university,Cantonal university,Co-applicants,0
+177255,ZH,International,Cantonal university,NA,Co-applicants,0
+177255,ZH,ZH,Cantonal university,Cantonal university,Applicant,1
+197268,PSI,PSI,ETH Domain,ETH Domain,Applicant,1
+197268,PSI,EPFL,ETH Domain,ETH Domain,Co-applicants,0
+190735,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+190735,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+167285,EPFL,LA,ETH Domain,Cantonal university,Co-applicants,0
+167285,EPFL,EPFL,ETH Domain,ETH Domain,Co-applicants,1
+167285,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+170735,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+170735,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+160914,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+160914,EPFL,International,ETH Domain,NA,Co-applicants,0
+160914,EPFL,International,ETH Domain,NA,Co-applicants,0
+160914,EPFL,International,ETH Domain,NA,Co-applicants,0
+175682,GE,International,Cantonal university,NA,Co-applicants,0
+175682,GE,GE,Cantonal university,Cantonal university,Applicant,1
+203626,EPFL,EPFL,ETH Domain,ETH Domain,Co-applicants,1
+203626,EPFL,HES-SO,ETH Domain,University of applied sciences,Co-applicants,0
+203626,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+170294,EPFL,International,ETH Domain,NA,Co-applicants,0
+170294,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+170177,EPFL,International,ETH Domain,NA,Co-applicants,0
+170177,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+169877,EMPA,FP,ETH Domain,Other,Applicant,0
+169877,EMPA,FP,ETH Domain,Other,Co-applicants,0
+169877,EMPA,ETHZ,ETH Domain,ETH Domain,Co-applicants,0
+190259,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+190259,EPFL,EPFL,ETH Domain,ETH Domain,Co-applicants,1
+202239,BE,HSLU,Cantonal university,University of applied sciences,Co-applicants,0
+202239,BE,EMPA,Cantonal university,ETH Domain,Co-applicants,0
+202239,BE,BE,Cantonal university,Cantonal university,Applicant,1
+180335,PSI,PSI,ETH Domain,ETH Domain,Applicant,1
+180335,PSI,International,ETH Domain,NA,Co-applicants,0
+180335,PSI,PSI,ETH Domain,ETH Domain,Co-applicants,1
+180335,PSI,EPFL,ETH Domain,ETH Domain,Co-applicants,0
+205436,HES-SO,GE,UAS,Cantonal university,Co-applicants,0
+205436,HES-SO,ZHAW,UAS,University of applied sciences,Co-applicants,0
+205436,HES-SO,HES-SO,UAS,University of applied sciences,Applicant,1
+175249,EMPA,International,ETH Domain,NA,Co-applicants,0
+175249,EMPA,EMPA,ETH Domain,ETH Domain,Applicant,1
+205925,EPFL,International,ETH Domain,NA,Co-applicants,0
+205925,EPFL,HES-SO,ETH Domain,University of applied sciences,Co-applicants,0
+205925,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+173661,EPFL,International,ETH Domain,NA,Co-applicants,0
+173661,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+179053,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+179053,ETHZ,NPO,ETH Domain,Other,Co-applicants,0
+172453,ZHAW,International,UAS,NA,Co-applicants,0
+172453,ZHAW,ZHAW,UAS,University of applied sciences,Applicant,1
+172453,ZHAW,FP,UAS,Other,Co-applicants,0
+172924,EPFL,International,ETH Domain,NA,Co-applicants,0
+172924,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+175703,EMPA,EMPA,ETH Domain,ETH Domain,Applicant,1
+175703,EMPA,International,ETH Domain,NA,Co-applicants,0
+175703,EMPA,International,ETH Domain,NA,Co-applicants,0
+200800,BE,BE,Cantonal university,Cantonal university,Applicant,1
+200800,BE,ZH,Cantonal university,Cantonal university,Co-applicants,0
+188830,ETHZ,International,ETH Domain,NA,Co-applicants,0
+188830,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+198750,BFH,ETHZ,UAS,ETH Domain,Co-applicants,0
+198750,BFH,BFH,UAS,University of applied sciences,Applicant,1
+198750,BFH,International,UAS,NA,Co-applicants,0
+176552,CSEM,CSEM,Other,Other research institutes,Applicant,1
+176552,CSEM,EMPA,Other,ETH Domain,Co-applicants,0
+176552,CSEM,EPFL,Other,ETH Domain,Co-applicants,0
+191997,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+191997,EPFL,International,ETH Domain,NA,Co-applicants,0
+190936,ETHZ,ETHZ,ETH Domain,ETH Domain,Co-applicants,1
+190936,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+183670,PSI,International,ETH Domain,NA,Co-applicants,0
+183670,PSI,International,ETH Domain,NA,Co-applicants,0
+183670,PSI,PSI,ETH Domain,ETH Domain,Applicant,1
+205408,CSEM,ZHAW,Other,University of applied sciences,Co-applicants,0
+205408,CSEM,NA,Other,Other,Applicant,0
+206049,ETHZ,International,ETH Domain,NA,Co-applicants,0
+206049,ETHZ,ETHZ,ETH Domain,ETH Domain,Applicant,1
+173860,EPFL,International,ETH Domain,NA,Co-applicants,0
+173860,EPFL,ETHZ,ETH Domain,ETH Domain,Co-applicants,0
+173860,EPFL,EPFL,ETH Domain,ETH Domain,Applicant,1
+165677,NE,ETHZ,Cantonal university,ETH Domain,Co-applicants,0
+165677,NE,NE,Cantonal university,Cantonal university,Applicant,1
+167333,BS,BS,Cantonal university,Cantonal university,Applicant,1
+167333,BS,NPO,Cantonal university,Other,Co-applicants,0
+167333,BS,BS,Cantonal university,Cantonal university,Co-applicants,1
+167333,BS,BS,Cantonal university,Cantonal university,Co-applicants,1
+202296,FR,International,Cantonal university,NA,Co-applicants,0
+202296,FR,PSI,Cantonal university,ETH Domain,Co-applicants,0
+202296,FR,EPFL,Cantonal university,ETH Domain,Co-applicants,0
+202296,FR,FR,Cantonal university,Cantonal university,Applicant,1
+172388,WSL,ETHZ,ETH Domain,ETH Domain,Co-applicants,0
+172388,WSL,SG,ETH Domain,Cantonal university,Applicant,0
+172388,WSL,BFH,ETH Domain,University of applied sciences,Co-applicants,0

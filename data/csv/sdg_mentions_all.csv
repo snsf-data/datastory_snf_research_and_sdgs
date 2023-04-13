@@ -1,0 +1,18 @@
+sdg_result,n_dim,freq_dim,n_elsevier,freq_elsevier,n_both,freq_both,sdg_result_de,sdg_result_fr
+01 No Poverty,14,0.001,204,0.016,5,0,01 Keine Armut,01 Éradication de la pauvreté
+02 Zero Hunger,78,0.006,141,0.011,39,0.003,02 Kein Hunger,02 Lutte contre la faim
+03 Good Health and Well Being,486,0.039,2566,0.206,386,0.031,03 Gesundheit und Wohlergehen,03 Accès à la santé
+04 Quality Education,126,0.01,33,0.003,20,0.002,04 Hochwertige Bildung,04 Accès à une éducation de qualité
+05 Gender Equality,29,0.002,81,0.007,23,0.002,05 Geschlechter-Gleichstellung,05 Égalité entre les sexes
+06 Clean Water and Sanitation,26,0.002,58,0.005,13,0.001,06 Sauberes Wasser und Sanitär-Einrichtungen,06 Accès à l'eau salubre et à l'assainissement
+07 Affordable and Clean Energy,571,0.046,342,0.028,240,0.019,07 Bezahlbare und saubere Energie,07 Recours aux énergies renouvelables
+08 Decent Work and Economic Growth,137,0.011,160,0.013,46,0.004,08 Menschenwürdige Arbeit und Wirtschaftswachstum,08 Accès à des emplois décents
+"09 Industry, Innovation and Infrastructure",18,0.001,45,0.004,6,0,"09 Industrie, Innovation und Infrastruktur","09 Industrie, innovation et infrastructure"
+10 Reduced Inequalities,168,0.014,153,0.012,64,0.005,10 Weniger Ungleichheiten,10 Réduction des inégalités
+11 Sustainable Cities and Communities,136,0.011,161,0.013,55,0.004,11 Nachhaltige Städte und Gemeinden,11 Villes et communautés durables
+12 Responsible Consumption and Production,62,0.005,126,0.01,20,0.002,12 Nachhaltiger Konsum und Produktion,12 Consommation et production responsables
+13 Climate Action,540,0.043,673,0.054,387,0.031,13 Massnahmen zum Klimaschutz,13 Lutte contre le changement climatique
+14 Life Below Water,13,0.001,37,0.003,8,0.001,14 Leben unter Wasser,14 Vie aquatique
+15 Life on Land,65,0.005,279,0.022,36,0.003,15 Leben an Land,15 Vie terrestre
+"16 Peace, Justice and Strong Institutions",428,0.034,357,0.029,215,0.017,"16 Frieden, Gerechtigkeit und starke Institutionen",16 Justice et paix
+17 Partnerships for the Goals,1,0,0,0,0,0,17 Partnerschaften zur Erreichung der Ziele,17 Partenariats pour la réalisation des objectifs
