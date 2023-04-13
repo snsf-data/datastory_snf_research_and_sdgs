@@ -2,9 +2,9 @@
 
 **The SNSF performed an exploratory analysis to determine the extent to which the projects it funds are related to the UN Sustainable Development Goals. The analysis found evidence of links to the Goals in all research areas. A survey of researchers is set to provide further insights.**
 
-[English](https%60:%20//data.snf.ch/stories/snf-research-and-sdgs-en.html)\
-[German](https%60:%20//data.snf.ch/stories/snf-forschung-und-nachhaltigkeitszielen-de.html)\
-[French](https%60:%20//data.snf.ch/stories/recherche-du-fns-et-odd-fr.html)
+[English](https://data.snf.ch/stories/snf-research-and-sdgs-en.html)\
+[German](https://data.snf.ch/stories/snf-forschung-und-nachhaltigkeitszielen-de.html)\
+[French](https://data.snf.ch/stories/recherche-du-fns-et-odd-fr.html)
 
 **Author(s)**: Stéphanie Würth, Sarah Achermann, and Simon Gorin
 
